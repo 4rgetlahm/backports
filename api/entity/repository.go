@@ -1,7 +1,12 @@
 package entity
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type Repository struct {
-	Owner string `json:"owner"`
-	Name  string `json:"name"`
-	URL   string `json:"url"`
+	ID       primitive.ObjectID `bson:"_id" json:"id"`
+	Server   string             `json:"server"`
+	Owner    string             `json:"owner"`
+	Name     string             `json:"name"`
+	CloneURL string             `json:"clone_url"`
+	Image    string             `json:"image"`
 }

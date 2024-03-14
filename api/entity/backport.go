@@ -1,6 +1,10 @@
 package entity
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Backport struct {
 	ID           primitive.ObjectID `bson:"_id" json:"id"`
@@ -8,9 +12,9 @@ type Backport struct {
 	Commits      []string           `json:"commits"`
 	Repository   Repository         `json:"repository"`
 	TargetBranch string             `json:"targetBranch"`
-	History      []HistoryEvent     `json:"history"`
-	DateCreated  string             `json:"dateCreated"`
-	DateUpdated  string             `json:"dateUpdated"`
+	Events       []BackportEvent    `json:"events"`
+	DateCreated  time.Time          `json:"dateCreated"`
+	DateUpdated  time.Time          `json:"dateUpdated"`
 }
 
 const (
@@ -29,7 +33,7 @@ const (
 	Failure = "Failure"
 )
 
-type HistoryEvent struct {
+type BackportEvent struct {
 	Action      string `json:"action"`
 	Content     string `json:"content"`
 	Status      string `json:"status"`

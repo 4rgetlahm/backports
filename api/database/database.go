@@ -11,10 +11,12 @@ import (
 
 var DB *mongo.Database
 var BackportCollection *mongo.Collection
+var RepositoryCollection *mongo.Collection
 
 func Init() {
 	DB = GetDatabase()
 	BackportCollection = DB.Collection("backports")
+	RepositoryCollection = DB.Collection("repositories")
 }
 
 func GetDatabase() *mongo.Database {
