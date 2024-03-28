@@ -20,22 +20,34 @@ type Backport struct {
 const (
 	ActionVirtualMachineCreated = "VirtualMachineCreated"
 	ActionVirtualMachineExited  = "VirtualMachineExited"
-	ActionGitFetch              = "GitFetch"
-	ActionGitCheckout           = "GitCheckout"
-	ActionGitPull               = "GitPull"
-	ActionGitPush               = "GitPush"
-	ActionGitCherryPick         = "GitCherryPick"
-	ActionGitCheckoutNewBranch  = "GitCheckoutNewBranch"
-)
 
-const (
-	Success = "Success"
-	Failure = "Failure"
+	ActionGitFetchStart   = "GitFetchStart"
+	ActionGitFetchSuccess = "GitFetchSuccess"
+	ActionGitFetchFailure = "GitFetchFailure"
+
+	ActionGitCheckoutStart   = "GitCheckoutSuccess"
+	ActionGitCheckoutSuccess = "GitCheckoutSuccess"
+	ActionGitCheckoutFailure = "GitCheckoutFailure"
+
+	ActionGitCheckoutNewBranchStart   = "GitCheckoutNewBranchStart"
+	ActionGitCheckoutNewBranchSuccess = "GitCheckoutNewBranchSuccess"
+	ActionGitCheckoutNewBranchFailure = "GitCheckoutNewBranchFailure"
+
+	ActionGitPullStart   = "GitPullStart"
+	ActionGitPullSuccess = "GitPullSuccess"
+	ActionGitPullFailure = "GitPullFailure"
+
+	ActionGitPushStart   = "GitPushStart"
+	ActionGitPushSuccess = "GitPushSuccess"
+	ActionGitPushFailure = "GitPushFailure"
+
+	ActionGitCherryPickStart   = "GitCherryPickStart"
+	ActionGitCherryPickSuccess = "GitCherryPickSuccess"
+	ActionGitCherryPickFailure = "GitCherryPickFailure"
 )
 
 type BackportEvent struct {
 	Action      string `json:"action"`
 	Content     string `json:"content"`
-	Status      string `json:"status"`
 	DateCreated string `json:"dateCreated"`
 }

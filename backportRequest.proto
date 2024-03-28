@@ -1,0 +1,18 @@
+syntax = "proto3";
+option go_package = "github.com/4rgetlahm/backports/backportRequest";
+
+message BackportRequest {
+    string reference = 1;
+    string image = 2;
+    string base_branch = 3;
+    string target_branch = 4;
+    repeated string commits = 5;
+}
+
+message BackportResponse {
+    string pod = 1;
+}
+
+service BackportRequestService {
+    rpc RunBackport(BackportRequest) returns (BackportResponse);
+}
