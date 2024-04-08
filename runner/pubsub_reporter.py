@@ -25,7 +25,7 @@ class PubSubReporter(EmptyReporter):
         self.reference = reference
 
         print(
-            f"Tracker initialized for reference: {self.reference}, topic: {self.topic}")
+            f"Reporter initialized for reference: {self.reference}, topic: {self.topic}")
         atexit.register(self.exit_handler)
         self.send(RunnerStatusMessage('start', 'success', {}).get())
 
