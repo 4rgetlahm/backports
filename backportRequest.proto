@@ -10,7 +10,7 @@ message BackportRequest {
 }
 
 message BackportResponse {
-    string pod = 1;
+    string jobName = 1;
 }
 
 service BackportRequestService {

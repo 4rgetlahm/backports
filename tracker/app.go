@@ -2,16 +2,21 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"net"
+	"path/filepath"
 
 	"github.com/4rgetlahm/backports/backportRequest"
+	"github.com/4rgetlahm/backports/tracker/launcher"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
+
+var clientset *kubernetes.Clientset
 
 type backportRequestServer struct {
 	backportRequest.UnimplementedBackportRequestServiceServer
@@ -30,33 +35,39 @@ func (s *backportRequestServer) RunBackport(ctx context.Context, req *backportRe
 	if req.Reference == "" {
 		return &backportRequest.BackportResponse{}, status.Error(400, "Reference ObjectID is required")
 	}
+
+	jobName := launcher.LaunchBackportJob(clientset, req.Image, req.Reference, req.BaseBranch, req.TargetBranch, req.Commits)
+
 	return &backportRequest.BackportResponse{
-		Pod: "backport-1",
+		JobName: jobName,
 	}, nil
 }
 
-func initKubernetesClient() {
-	rules := clientcmd.NewDefaultClientConfigLoadingRules()
-	kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, &clientcmd.ConfigOverrides{})
-	config, err := kubeconfig.ClientConfig()
+func initKubernetesClient() *kubernetes.Clientset {
+
+	var kubeconfig *string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		log.Fatalf("Failed to load kubeconfig: %v", err)
+		panic(err)
 	}
 
-	clientset := kubernetes.NewForConfigOrDie(config)
-
-	nodeList, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Fatalf("Failed to list nodes: %v", err)
+		panic(err)
 	}
 
-	for _, node := range nodeList.Items {
-		log.Printf("Node: %s\n", node.Name)
-	}
+	return clientset
 }
 
 func main() {
-	initKubernetesClient()
+	clientset = initKubernetesClient()
 	lis, err := net.Listen("tcp", ":5001")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
