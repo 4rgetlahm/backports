@@ -1,6 +1,6 @@
 import os
-from runner.backport_runner_pipeline import BackportRunnerPipeline
-from runner.pubsub_reporter import PubSubReporter
+from backport_runner_pipeline import BackportRunnerPipeline
+from pubsub_reporter import PubSubReporter
 
 reference = os.environ.get('REFERENCE')
 base_branch = os.environ.get('BASE_BRANCH')

@@ -4,7 +4,7 @@ import base64
 from messages import RunnerStatusMessage
 from google.cloud import pubsub_v1
 from google.auth import jwt
-from runner.reporter import EmptyReporter
+from reporter import EmptyReporter
 
 
 class PubSubReporter(EmptyReporter):
