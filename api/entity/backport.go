@@ -1,6 +1,10 @@
 package entity
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Backport struct {
 	ID           primitive.ObjectID `bson:"_id" json:"id"`
@@ -8,30 +12,42 @@ type Backport struct {
 	Commits      []string           `json:"commits"`
 	Repository   Repository         `json:"repository"`
 	TargetBranch string             `json:"targetBranch"`
-	History      []HistoryEvent     `json:"history"`
-	DateCreated  string             `json:"dateCreated"`
-	DateUpdated  string             `json:"dateUpdated"`
+	Events       []BackportEvent    `json:"events"`
+	DateCreated  time.Time          `json:"dateCreated"`
+	DateUpdated  time.Time          `json:"dateUpdated"`
 }
 
 const (
 	ActionVirtualMachineCreated = "VirtualMachineCreated"
 	ActionVirtualMachineExited  = "VirtualMachineExited"
-	ActionGitFetch              = "GitFetch"
-	ActionGitCheckout           = "GitCheckout"
-	ActionGitPull               = "GitPull"
-	ActionGitPush               = "GitPush"
-	ActionGitCherryPick         = "GitCherryPick"
-	ActionGitCheckoutNewBranch  = "GitCheckoutNewBranch"
+
+	ActionGitFetchStart   = "GitFetchStart"
+	ActionGitFetchSuccess = "GitFetchSuccess"
+	ActionGitFetchFailure = "GitFetchFailure"
+
+	ActionGitCheckoutStart   = "GitCheckoutSuccess"
+	ActionGitCheckoutSuccess = "GitCheckoutSuccess"
+	ActionGitCheckoutFailure = "GitCheckoutFailure"
+
+	ActionGitCheckoutNewBranchStart   = "GitCheckoutNewBranchStart"
+	ActionGitCheckoutNewBranchSuccess = "GitCheckoutNewBranchSuccess"
+	ActionGitCheckoutNewBranchFailure = "GitCheckoutNewBranchFailure"
+
+	ActionGitPullStart   = "GitPullStart"
+	ActionGitPullSuccess = "GitPullSuccess"
+	ActionGitPullFailure = "GitPullFailure"
+
+	ActionGitPushStart   = "GitPushStart"
+	ActionGitPushSuccess = "GitPushSuccess"
+	ActionGitPushFailure = "GitPushFailure"
+
+	ActionGitCherryPickStart   = "GitCherryPickStart"
+	ActionGitCherryPickSuccess = "GitCherryPickSuccess"
+	ActionGitCherryPickFailure = "GitCherryPickFailure"
 )
 
-const (
-	Success = "Success"
-	Failure = "Failure"
-)
-
-type HistoryEvent struct {
+type BackportEvent struct {
 	Action      string `json:"action"`
 	Content     string `json:"content"`
-	Status      string `json:"status"`
 	DateCreated string `json:"dateCreated"`
 }
