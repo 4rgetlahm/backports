@@ -6,10 +6,16 @@ from google.cloud import pubsub_v1
 from google.auth import jwt
 from reporter import EmptyReporter
 
+# Reporter config is base64 encoded JSON with following structure:
+# {
+#     "project": "project-id",
+#     "topic": "topic-name",
+#     "credentials": base64 encoded service account JSON
+# }
 
 class PubSubReporter(EmptyReporter):
-    def __init__(self, base64credentials, reference=None) -> None:
-        self.credentials = base64.b64decode(base64credentials).decode('utf-8')
+    def __init__(self, reporter_config, reference=None) -> None:
+        self.credentials = base64.b64decode(reporter_config["credentials"]).decode('utf-8')
         self.credentials = json.loads(self.credentials)
 
         self.audience = "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
@@ -19,8 +25,8 @@ class PubSubReporter(EmptyReporter):
 
         self.publisher = pubsub_v1.PublisherClient(credentials=credentials)
         self.topic = 'projects/{project_id}/topics/{topic}'.format(
-            project_id=credentials["project"],
-            topic=credentials["topic"],
+            project_id=reporter_config["project"],
+            topic=reporter_config["topic"],
         )
         self.reference = reference
 
@@ -29,11 +35,11 @@ class PubSubReporter(EmptyReporter):
         atexit.register(self.exit_handler)
         self.send(RunnerStatusMessage('start', 'success', {}).get())
 
-    def send(self, data):
-        data["reference"] = str(self.reference)
+    def send(self, json_message):
+        json_message["reference"] = str(self.reference)
         try:
             future = self.publisher.publish(
-                self.topic, json.dumps(data).encode('utf-8'))
+                self.topic, json.dumps(json_message).encode('utf-8'))
             future.result()
         except Exception as e:
             print(e)
