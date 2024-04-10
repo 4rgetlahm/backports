@@ -43,6 +43,14 @@ func LaunchBackportJob(clientset *kubernetes.Clientset, image string, reference 
 									Name:  "COMMITS",
 									Value: strings.Join(commits, ","),
 								},
+								{
+									Name:  "SOURCE_PATH",
+									Value: "/repo",
+								},
+								{
+									Name:  "REPORTER_CONFIG",
+									Value: "",
+								},
 							},
 						},
 					},
