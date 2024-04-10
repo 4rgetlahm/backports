@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 from backport_runner_pipeline import BackportRunnerPipeline
 from pubsub_reporter import PubSubReporter
@@ -34,6 +35,7 @@ if len(commits) == 0:
     raise ValueError('No commits provided')
 
 reporter_config = base64.b64decode(reporter_config).decode('utf-8')
+reporter_config = json.loads(reporter_config)
 reporter = PubSubReporter(reporter_config, reference=reference)
 
 pipeline = BackportRunnerPipeline(source_path=source_path, destination=base_branch, branch_name=target_branch, commits=commits, reporter=reporter)
