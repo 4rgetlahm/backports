@@ -11,33 +11,34 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func LaunchBackportJob(clientset *kubernetes.Clientset, image string, reference string, baseBranch string, targetBranch string, commits []string) string {
+func LaunchBackportJob(clientset *kubernetes.Clientset, image string, reference string, newBranchName string, targetBranchName string, commits []string) string {
 	jobClient := clientset.BatchV1().Jobs("default")
+	var backoffLimit int32 = 0
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "backport-job-" + reference,
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: &backoffLimit,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:    "backport-runner",
-							Image:   image,
-							Command: []string{"python", "backport-runner.py"},
+							Name:  "backport-runner",
+							Image: image,
 							Env: []corev1.EnvVar{
 								{
 									Name:  "REFERENCE",
 									Value: reference,
 								},
 								{
-									Name:  "BASE_BRANCH",
-									Value: baseBranch,
+									Name:  "NEW_BRANCH_NAME",
+									Value: newBranchName,
 								},
 								{
-									Name:  "TARGET_BRANCH",
-									Value: targetBranch,
+									Name:  "TARGET_BRANCH_NAME",
+									Value: targetBranchName,
 								},
 								{
 									Name:  "COMMITS",

@@ -4,8 +4,8 @@ option go_package = "github.com/4rgetlahm/backports/backportRequest";
 message BackportRequest {
     string reference = 1;
     string image = 2;
-    string base_branch = 3;
-    string target_branch = 4;
+    string new_branch_name = 3;
+    string target_branch_name = 4;
     repeated string commits = 5;
 }
 

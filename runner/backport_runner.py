@@ -5,8 +5,8 @@ from backport_runner_pipeline import BackportRunnerPipeline
 from pubsub_reporter import PubSubReporter
 
 reference = os.environ.get('REFERENCE')
-base_branch = os.environ.get('BASE_BRANCH')
-target_branch = os.environ.get('TARGET_BRANCH')
+new_branch_name = os.environ.get('NEW_BRANCH_NAME')
+target_branch_name = os.environ.get('TARGET_BRANCH_NAME')
 commits = os.environ.get('COMMITS')
 reporter_config = os.environ.get('REPORTER_CONFIG')
 source_path = os.environ.get('SOURCE_PATH')
@@ -14,11 +14,11 @@ source_path = os.environ.get('SOURCE_PATH')
 if reference is None:
     raise ValueError('REFERENCE environment variable is not set')
 
-if base_branch is None:
-    raise ValueError('BASE_BRANCH environment variable is not set')
+if new_branch_name is None:
+    raise ValueError('NEW_BRANCH_NAME environment variable is not set')
 
-if target_branch is None:
-    raise ValueError('TARGET_BRANCH environment variable is not set')
+if target_branch_name is None:
+    raise ValueError('TARGET_BRANCH_NAME environment variable is not set')
 
 if commits is None:
     raise ValueError('COMMITS environment variable is not set')
@@ -38,12 +38,12 @@ reporter_config = base64.b64decode(reporter_config).decode('utf-8')
 reporter_config = json.loads(reporter_config)
 reporter = PubSubReporter(reporter_config, reference=reference)
 
-pipeline = BackportRunnerPipeline(source_path=source_path, destination=base_branch, branch_name=target_branch, commits=commits, reporter=reporter)
+pipeline = BackportRunnerPipeline(source_path=source_path, target_branch_name=new_branch_name, new_branch_name=target_branch_name, commits=commits, reporter=reporter)
 
 print('Starting runner with following parameters:')
 print('Reference: ' + reference)
-print('Base branch: ' + base_branch)
-print('Target branch: ' + target_branch)
+print('New branch name: ' + new_branch_name)
+print('Target branch name: ' + target_branch_name)
 print('Commits: ' + str(commits))
 
 pipeline.run()

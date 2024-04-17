@@ -3,9 +3,9 @@ from messages import RunnerStatusMessage
 
 
 class BackportRunnerPipeline:
-    def __init__(self, source_path, destination, branch_name, commits, reporter) -> None:
-        self.destination = destination
-        self.branch_name = branch_name
+    def __init__(self, source_path, target_branch_name, new_branch_name, commits, reporter) -> None:
+        self.target_branch_name = target_branch_name
+        self.new_branch_name = new_branch_name
         self.commits = commits
 
         self.git = git.Git(source_path)
@@ -15,9 +15,9 @@ class BackportRunnerPipeline:
 
     def run(self):
         self.fetch()
-        self.checkout(self.destination, clean=True)
+        self.checkout(self.target_branch_name, clean=True)
         self.pull()
-        self.checkout_new_branch(self.branch_name)
+        self.checkout_new_branch(self.new_branch_name)
         for commit in self.commits:
             self.cherry_pick(commit, ['-m 1'])
         self.push()
@@ -122,12 +122,12 @@ class BackportRunnerPipeline:
     def push(self):
         print('Pushing to origin')
         self.reporter.send(RunnerStatusMessage(
-            'push', 'start', {"branch": self.branch_name}).get()
+            'push', 'start', {"branch": self.new_branch_name}).get()
         )
         try:
-            self.git.push('--set-upstream', 'origin', self.branch_name)
+            self.git.push('--set-upstream', 'origin', self.new_branch_name)
             self.reporter.send(RunnerStatusMessage(
-                'push', 'success', {"branch": self.branch_name}).get()
+                'push', 'success', {"branch": self.new_branch_name}).get()
             )
         except git.GitCommandError as e:
             print('Failed to push to origin')
@@ -137,7 +137,7 @@ class BackportRunnerPipeline:
                 self.push()
                 return
             self.reporter.send(RunnerStatusMessage(
-                'push', 'failure', {"branch": self.branch_name, "error": str(e)}).get()
+                'push', 'failure', {"branch": self.new_branch_name, "error": str(e)}).get()
             )
             exit(1)
 

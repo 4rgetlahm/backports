@@ -23,7 +23,7 @@ type backportRequestServer struct {
 }
 
 func (s *backportRequestServer) RunBackport(ctx context.Context, req *backportRequest.BackportRequest) (*backportRequest.BackportResponse, error) {
-	if req.BaseBranch == "" || req.TargetBranch == "" {
+	if req.NewBranchName == "" || req.TargetBranchName == "" {
 		return &backportRequest.BackportResponse{}, status.Error(400, "Base branch and target branch are required")
 	}
 	if req.Commits == nil || len(req.Commits) == 0 {
@@ -36,7 +36,7 @@ func (s *backportRequestServer) RunBackport(ctx context.Context, req *backportRe
 		return &backportRequest.BackportResponse{}, status.Error(400, "Reference ObjectID is required")
 	}
 
-	jobName := launcher.LaunchBackportJob(clientset, req.Image, req.Reference, req.BaseBranch, req.TargetBranch, req.Commits)
+	jobName := launcher.LaunchBackportJob(clientset, req.Image, req.Reference, req.NewBranchName, req.TargetBranchName, req.Commits)
 
 	return &backportRequest.BackportResponse{
 		JobName: jobName,
