@@ -38,7 +38,7 @@ reporter_config = base64.b64decode(reporter_config).decode('utf-8')
 reporter_config = json.loads(reporter_config)
 reporter = PubSubReporter(reporter_config, reference=reference)
 
-pipeline = BackportRunnerPipeline(source_path=source_path, target_branch_name=new_branch_name, new_branch_name=target_branch_name, commits=commits, reporter=reporter)
+pipeline = BackportRunnerPipeline(source_path=source_path, target_branch_name=target_branch_name, new_branch_name=new_branch_name, commits=commits, reporter=reporter)
 
 print('Starting runner with following parameters:')
 print('Reference: ' + reference)
