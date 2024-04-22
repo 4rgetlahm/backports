@@ -1,6 +1,8 @@
 package types
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Repository struct {
 	ID       primitive.ObjectID `bson:"_id" json:"id"`
@@ -8,4 +10,5 @@ type Repository struct {
 	Owner    string             `json:"owner"`
 	Name     string             `json:"name"`
 	CloneURL string             `json:"clone_url"`
+	Volume   Volume             `json:"volume"`
 }

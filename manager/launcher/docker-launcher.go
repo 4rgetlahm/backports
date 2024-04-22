@@ -54,6 +54,8 @@ func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, clon
 		return "", err
 	}
 
+	service.UpdateVolumeStatus(volumeName, types.VolumeStatusCreating)
+
 	resp, err := dockerClient.ContainerCreate(ctx, &container.Config{
 		Image: "4rgetlahm/repo-cloner:1.0",
 		Env: []string{
@@ -85,7 +87,7 @@ func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, clon
 		return "", err
 	}
 
-	go launcher.WaitAndRemoveContainer(resp.ID)
+	go launcher.UpdateVolumeStateAndRemoveContainerPostContainerExit(resp.ID, volumeName)
 
 	return resp.ID, nil
 }
@@ -151,7 +153,7 @@ func (launcher DockerLauncher) launchBackportJob(volume string, reference primit
 		return err
 	}
 
-	go launcher.WaitAndRemoveContainerAndVolume(resp.ID, newVolumeName)
+	go launcher.RemoveContainerAndVolumePostContainerExit(resp.ID, newVolumeName)
 	service.AddEvent(reference, types.ActionVirtualMachineCreated, resp.ID)
 
 	return nil
@@ -235,7 +237,7 @@ func (Launcher DockerLauncher) DuplicateVolume(volumeName string, newVolumeName 
 	return resp.ID, nil
 }
 
-func (launcher DockerLauncher) WaitAndRemoveContainer(containerID string) {
+func (launcher DockerLauncher) UpdateVolumeStateAndRemoveContainerPostContainerExit(containerID string, volumeName string) {
 	log.Println("Awaiting container to finish: " + containerID)
 	exitCh, err := dockerClient.ContainerWait(context.Background(), containerID, container.WaitConditionNotRunning)
 
@@ -250,6 +252,8 @@ func (launcher DockerLauncher) WaitAndRemoveContainer(containerID string) {
 		dockerClient.ContainerRemove(ctx, containerID, container.RemoveOptions{
 			Force: true,
 		})
+
+		service.UpdateVolumeStatus(volumeName, types.VolumeStatusReady)
 		break
 	case <-time.After(10 * time.Minute):
 		break
@@ -260,7 +264,7 @@ func (launcher DockerLauncher) WaitAndRemoveContainer(containerID string) {
 	}
 }
 
-func (launcher DockerLauncher) WaitAndRemoveContainerAndVolume(containerID string, volumeName string) {
+func (launcher DockerLauncher) RemoveContainerAndVolumePostContainerExit(containerID string, volumeName string) {
 	log.Println("Awaiting container to finish: " + containerID)
 	exitCh, err := dockerClient.ContainerWait(context.Background(), containerID, container.WaitConditionNotRunning)
 

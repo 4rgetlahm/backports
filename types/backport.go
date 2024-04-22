@@ -11,9 +11,9 @@ type Backport struct {
 	Author           string             `json:"author"`
 	Commits          []string           `json:"commits"`
 	Repository       Repository         `json:"repository"`
-	TargetBranchName string             `json:"targetBranchName"`
-	NewBranchName    string             `json:"newBranchName"`
+	TargetBranchName string             `json:"target_branch_name"`
+	NewBranchName    string             `json:"new_branch_name"`
 	Events           []BackportEvent    `json:"events"`
-	DateCreated      time.Time          `json:"dateCreated"`
-	DateUpdated      time.Time          `json:"dateUpdated"`
+	DateCreated      time.Time          `json:"date_created"`
+	DateUpdated      time.Time          `json:"date_updated"`
 }

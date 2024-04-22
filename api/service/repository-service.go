@@ -49,12 +49,19 @@ func CreateRepository(clone_url string) (types.Repository, error) {
 		return existingRepository, errors.New("repository already exists")
 	}
 
+	var volumeName string = owner + "." + name
+
 	repo := types.Repository{
 		ID:       primitive.NewObjectID(),
 		Server:   server,
 		Owner:    owner,
 		Name:     name,
 		CloneURL: clone_url,
+		Volume: types.Volume{
+			Name:        volumeName,
+			Status:      types.VolumeStatusNotInitialized,
+			LastUpdated: time.Now().UTC(),
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -72,7 +79,7 @@ func CreateRepository(clone_url string) (types.Repository, error) {
 	var trueBool = true
 
 	localGRPC.VolumeGenerationClient.Generate(context.Background(), &repositoryVolumeGenerator.GenerateRepositoryVolumeRequest{
-		VolumeName:  repo.Owner + "." + repo.Name,
+		VolumeName:  volumeName,
 		CloneUrl:    repo.CloneURL,
 		Credentials: "",
 		Overwrite:   &trueBool,

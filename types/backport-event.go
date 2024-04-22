@@ -34,5 +34,5 @@ const (
 type BackportEvent struct {
 	Action      string `json:"action"`
 	Content     string `json:"content"`
-	DateCreated string `json:"dateCreated"`
+	DateCreated string `json:"date_created"`
 }
