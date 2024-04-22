@@ -97,7 +97,7 @@ func (launcher DockerLauncher) LaunchBackportJob(volume string, reference primit
 		dockerClient = launcher.InitClient()
 	}
 
-	service.AddEvent(reference, types.ActionVirtualMachinePreparing, "")
+	service.AddBackportEvent(reference, types.ActionVirtualMachinePreparing, "")
 
 	go launcher.launchBackportJob(volume, reference, newBranchName, targetBranchName, commits)
 
@@ -112,7 +112,7 @@ func (launcher DockerLauncher) launchBackportJob(volume string, reference primit
 	_, err := launcher.DuplicateVolume(volume, newVolumeName)
 
 	if err != nil {
-		service.AddEvent(reference, types.ActionVirtualMachineError, err.Error())
+		service.AddBackportEvent(reference, types.ActionVirtualMachineError, err.Error())
 		return err
 	}
 
@@ -142,19 +142,19 @@ func (launcher DockerLauncher) launchBackportJob(volume string, reference primit
 		}, nil, nil, "backport-job-"+reference.Hex())
 
 	if err != nil {
-		service.AddEvent(reference, types.ActionVirtualMachineError, err.Error())
+		service.AddBackportEvent(reference, types.ActionVirtualMachineError, err.Error())
 		return err
 	}
 
 	err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{})
 
 	if err != nil {
-		service.AddEvent(reference, types.ActionVirtualMachineError, err.Error())
+		service.AddBackportEvent(reference, types.ActionVirtualMachineError, err.Error())
 		return err
 	}
 
 	go launcher.RemoveContainerAndVolumePostContainerExit(resp.ID, newVolumeName)
-	service.AddEvent(reference, types.ActionVirtualMachineCreated, resp.ID)
+	service.AddBackportEvent(reference, types.ActionVirtualMachineCreated, resp.ID)
 
 	return nil
 }

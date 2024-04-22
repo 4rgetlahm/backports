@@ -15,5 +15,4 @@ type Backport struct {
 	NewBranchName    string             `json:"new_branch_name"`
 	Events           []BackportEvent    `json:"events"`
 	DateCreated      time.Time          `json:"date_created"`
-	DateUpdated      time.Time          `json:"date_updated"`
 }

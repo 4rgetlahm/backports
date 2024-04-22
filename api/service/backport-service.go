@@ -49,18 +49,18 @@ func GetBackports(from int, to int) ([]types.Backport, error) {
 }
 
 func GetBackport(id primitive.ObjectID) (types.Backport, error) {
-	var b types.Backport
+	var backport types.Backport
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	err := database.BackportCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&b)
+	err := database.BackportCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&backport)
 
 	if err != nil {
 		return types.Backport{}, errors.New("error retrieving backport")
 	}
 
-	return b, nil
+	return backport, nil
 }
 
 func CreateBackport(author string, commits []string, repositoryOwner string, repositoryName, targetBranchName string, newBranchName string) (types.Backport, error) {
@@ -69,7 +69,7 @@ func CreateBackport(author string, commits []string, repositoryOwner string, rep
 		return types.Backport{}, errors.New("error retrieving repository")
 	}
 
-	b := types.Backport{
+	backport := types.Backport{
 		ID:               primitive.NewObjectID(),
 		Author:           author,
 		Commits:          commits,
@@ -78,33 +78,32 @@ func CreateBackport(author string, commits []string, repositoryOwner string, rep
 		NewBranchName:    newBranchName,
 		Events:           []types.BackportEvent{},
 		DateCreated:      time.Now(),
-		DateUpdated:      time.Now(),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	var result *mongo.InsertOneResult
-	result, err = database.BackportCollection.InsertOne(ctx, b)
+	result, err = database.BackportCollection.InsertOne(ctx, backport)
 
 	if err != nil {
 		return types.Backport{}, errors.New("error creating backport")
 	}
 
-	b.ID = result.InsertedID.(primitive.ObjectID)
+	backport.ID = result.InsertedID.(primitive.ObjectID)
 
 	localGRPC.BackportRequestClient.RunBackport(context.Background(), &backportRequest.BackportRequest{
-		Reference:        b.ID.Hex(),
+		Reference:        backport.ID.Hex(),
 		Volume:           repository.Owner + "." + repository.Name,
 		NewBranchName:    newBranchName,
 		TargetBranchName: targetBranchName,
-		Commits:          b.Commits,
+		Commits:          backport.Commits,
 	})
 
-	return b, nil
+	return backport, nil
 }
 
-func AddEvent(backportID primitive.ObjectID, action string, content string) error {
+func AddBackportEvent(backportID primitive.ObjectID, action string, content string) error {
 	event := types.BackportEvent{
 		Action:      action,
 		Content:     content,
