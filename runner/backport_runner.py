@@ -41,6 +41,7 @@ reporter = PubSubReporter(reporter_config, reference=reference)
 pipeline = BackportRunnerPipeline(source_path=source_path, target_branch_name=target_branch_name, new_branch_name=new_branch_name, commits=commits, reporter=reporter)
 
 print('Starting runner with following parameters:')
+print('Source path: ' + source_path)
 print('Reference: ' + reference)
 print('New branch name: ' + new_branch_name)
 print('Target branch name: ' + target_branch_name)

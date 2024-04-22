@@ -13,6 +13,9 @@ class BackportRunnerPipeline:
         self.push_retry_count = 0
         self.push_retry_count_limit = 5
 
+        git.repo.config_writer().set_value("user", "name", "Backport Automation").release()
+        git.repo.config_writer().set_value("user", "email", "backport-automation@backports.com").release()
+
     def run(self):
         self.fetch()
         self.checkout(self.target_branch_name, clean=True)
