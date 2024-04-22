@@ -7,8 +7,8 @@ RUN git clone https://github.com/4rgetlahm/backports.git
 COPY . .
 
 # Install requirements
-WORKDIR /backports/repository-volume-generator
+WORKDIR /backports/repo-cloner
 RUN pip install -r requirements.txt
 
 # Set the entrypoint
-ENTRYPOINT ["python", "repository_volume_generator.py"]
+ENTRYPOINT ["python", "repo_cloner.py"]
