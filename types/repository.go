@@ -1,4 +1,4 @@
-package entity
+package types
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -8,5 +8,4 @@ type Repository struct {
 	Owner    string             `json:"owner"`
 	Name     string             `json:"name"`
 	CloneURL string             `json:"clone_url"`
-	Image    string             `json:"image"`
 }

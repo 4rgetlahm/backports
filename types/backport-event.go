@@ -1,25 +1,10 @@
-package entity
-
-import (
-	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
-type Backport struct {
-	ID           primitive.ObjectID `bson:"_id" json:"id"`
-	Author       string             `json:"author"`
-	Commits      []string           `json:"commits"`
-	Repository   Repository         `json:"repository"`
-	TargetBranch string             `json:"targetBranch"`
-	Events       []BackportEvent    `json:"events"`
-	DateCreated  time.Time          `json:"dateCreated"`
-	DateUpdated  time.Time          `json:"dateUpdated"`
-}
+package types
 
 const (
-	ActionVirtualMachineCreated = "VirtualMachineCreated"
-	ActionVirtualMachineExited  = "VirtualMachineExited"
+	ActionVirtualMachinePreparing = "VirtualMachinePreparing"
+	ActionVirtualMachineError     = "VirtualMachineError"
+	ActionVirtualMachineCreated   = "VirtualMachineCreated"
+	ActionVirtualMachineExited    = "VirtualMachineExited"
 
 	ActionGitFetchStart   = "GitFetchStart"
 	ActionGitFetchSuccess = "GitFetchSuccess"

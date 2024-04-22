@@ -50,7 +50,7 @@ func CreateRepository(c *gin.Context) {
 		return
 	}
 
-	repository, err := service.CreateRepository(request.CloneURL, request.Image)
+	repository, err := service.CreateRepository(request.CloneURL)
 
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})

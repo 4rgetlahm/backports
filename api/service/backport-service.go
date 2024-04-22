@@ -6,20 +6,22 @@ import (
 	"log"
 	"time"
 
-	"github.com/4rgetlahm/backports/api/database"
-	"github.com/4rgetlahm/backports/api/entity"
+	"github.com/4rgetlahm/backports/api/localGRPC"
+	"github.com/4rgetlahm/backports/backportRequest"
+	"github.com/4rgetlahm/backports/database"
+	"github.com/4rgetlahm/backports/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func GetBackports(from int, to int) ([]entity.Backport, error) {
+func GetBackports(from int, to int) ([]types.Backport, error) {
 	if from < 0 || to < 0 || from > to {
-		return []entity.Backport{}, errors.New("invalid from and to parameters")
+		return []types.Backport{}, errors.New("invalid from and to parameters")
 	}
 
-	var backports []entity.Backport
+	var backports []types.Backport
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -31,64 +33,92 @@ func GetBackports(from int, to int) ([]entity.Backport, error) {
 
 	if err != nil {
 		log.Println(err)
-		return []entity.Backport{}, errors.New("error retrieving backports")
+		return []types.Backport{}, errors.New("error retrieving backports")
 	}
 
 	if err = cursor.All(ctx, &backports); err != nil {
 		log.Println(err)
-		return []entity.Backport{}, errors.New("error retrieving backports")
+		return []types.Backport{}, errors.New("error retrieving backports")
 	}
 
 	if len(backports) == 0 {
-		return []entity.Backport{}, errors.New("no backports found")
+		return []types.Backport{}, errors.New("no backports found")
 	}
 
 	return backports, nil
 }
 
-func GetBackport(id primitive.ObjectID) (entity.Backport, error) {
-	var backport entity.Backport
+func GetBackport(id primitive.ObjectID) (types.Backport, error) {
+	var b types.Backport
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	err := database.BackportCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&backport)
+	err := database.BackportCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&b)
 
 	if err != nil {
-		return entity.Backport{}, errors.New("error retrieving backport")
+		return types.Backport{}, errors.New("error retrieving backport")
 	}
 
-	return backport, nil
+	return b, nil
 }
 
-func CreateBackport(author string, commits []string, repositoryOwner string, repositoryName, targetBranch string) (entity.Backport, error) {
+func CreateBackport(author string, commits []string, repositoryOwner string, repositoryName, targetBranchName string, newBranchName string) (types.Backport, error) {
 	repository, err := GetRepository(repositoryOwner, repositoryName)
 	if err != nil {
-		return entity.Backport{}, errors.New("error retrieving repository")
+		return types.Backport{}, errors.New("error retrieving repository")
 	}
 
-	backport := entity.Backport{
-		ID:           primitive.NewObjectID(),
-		Author:       author,
-		Commits:      commits,
-		Repository:   repository,
-		TargetBranch: targetBranch,
-		Events:       []entity.BackportEvent{},
-		DateCreated:  time.Now(),
-		DateUpdated:  time.Now(),
+	b := types.Backport{
+		ID:               primitive.NewObjectID(),
+		Author:           author,
+		Commits:          commits,
+		Repository:       repository,
+		TargetBranchName: targetBranchName,
+		NewBranchName:    newBranchName,
+		Events:           []types.BackportEvent{},
+		DateCreated:      time.Now(),
+		DateUpdated:      time.Now(),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	var result *mongo.InsertOneResult
-	result, err = database.BackportCollection.InsertOne(ctx, backport)
+	result, err = database.BackportCollection.InsertOne(ctx, b)
 
 	if err != nil {
-		return entity.Backport{}, errors.New("error creating backport")
+		return types.Backport{}, errors.New("error creating backport")
 	}
 
-	backport.ID = result.InsertedID.(primitive.ObjectID)
+	b.ID = result.InsertedID.(primitive.ObjectID)
 
-	return backport, nil
+	localGRPC.BackportRequestClient.RunBackport(context.Background(), &backportRequest.BackportRequest{
+		Reference:        b.ID.Hex(),
+		Volume:           repository.Owner + "." + repository.Name,
+		NewBranchName:    newBranchName,
+		TargetBranchName: targetBranchName,
+		Commits:          b.Commits,
+	})
+
+	return b, nil
+}
+
+func AddEvent(backportID primitive.ObjectID, action string, content string) error {
+	event := types.BackportEvent{
+		Action:      action,
+		Content:     content,
+		DateCreated: time.Now().Format(time.RFC3339),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	_, err := database.BackportCollection.UpdateOne(ctx, bson.M{"_id": backportID}, bson.M{"$push": bson.M{"events": event}})
+
+	if err != nil {
+		return errors.New("error adding event")
+	}
+
+	return nil
 }

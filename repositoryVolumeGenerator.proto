@@ -3,6 +3,9 @@ option go_package = "github.com/4rgetlahm/backports/repositoryVolumeGenerator";
 
 message GenerateRepositoryVolumeRequest {
     string volume_name = 1;
+    string clone_url = 2;
+    string credentials = 3;
+    optional bool overwrite = 4;
 }
 
 message GenerateVolumeResponse {

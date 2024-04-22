@@ -6,35 +6,37 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/4rgetlahm/backports/api/database"
-	"github.com/4rgetlahm/backports/api/entity"
+	"github.com/4rgetlahm/backports/api/localGRPC"
+	"github.com/4rgetlahm/backports/database"
+	"github.com/4rgetlahm/backports/repositoryVolumeGenerator"
+	"github.com/4rgetlahm/backports/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetRepository(owner string, name string) (entity.Repository, error) {
-	var repository entity.Repository
+func GetRepository(owner string, name string) (types.Repository, error) {
+	var repo types.Repository
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	err := database.RepositoryCollection.FindOne(ctx, bson.M{"owner": owner, "name": name}).Decode(&repository)
+	err := database.RepositoryCollection.FindOne(ctx, bson.M{"owner": owner, "name": name}).Decode(&repo)
 
 	if err != nil {
-		return entity.Repository{}, errors.New("error retrieving repository")
+		return types.Repository{}, errors.New("error retrieving repository")
 	}
 
-	return repository, nil
+	return repo, nil
 }
 
-func CreateRepository(clone_url string, image string) (entity.Repository, error) {
+func CreateRepository(clone_url string) (types.Repository, error) {
 
 	regex := regexp.MustCompile(`(?P<Server>..+)\/(?P<Owner>..+)\/(?P<Name>..+).git`)
 	match := regex.FindStringSubmatch(clone_url)
 
 	if len(match) != 4 {
-		return entity.Repository{}, errors.New("invalid clone URL")
+		return types.Repository{}, errors.New("invalid clone URL")
 	}
 
 	server := match[1]
@@ -47,32 +49,40 @@ func CreateRepository(clone_url string, image string) (entity.Repository, error)
 		return existingRepository, errors.New("repository already exists")
 	}
 
-	repository := entity.Repository{
+	repo := types.Repository{
 		ID:       primitive.NewObjectID(),
 		Server:   server,
 		Owner:    owner,
 		Name:     name,
 		CloneURL: clone_url,
-		Image:    image,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	var result *mongo.InsertOneResult
-	result, err = database.RepositoryCollection.InsertOne(ctx, repository)
+	result, err = database.RepositoryCollection.InsertOne(ctx, repo)
 
 	if err != nil {
-		return entity.Repository{}, errors.New("error creating repository")
+		return types.Repository{}, errors.New("error creating repository")
 	}
 
-	repository.ID = result.InsertedID.(primitive.ObjectID)
+	repo.ID = result.InsertedID.(primitive.ObjectID)
 
-	return repository, nil
+	var trueBool = true
+
+	localGRPC.VolumeGenerationClient.Generate(context.Background(), &repositoryVolumeGenerator.GenerateRepositoryVolumeRequest{
+		VolumeName:  repo.Owner + "." + repo.Name,
+		CloneUrl:    repo.CloneURL,
+		Credentials: "",
+		Overwrite:   &trueBool,
+	})
+
+	return repo, nil
 }
 
-func GetRepositories() ([]entity.Repository, error) {
-	var repositories []entity.Repository
+func GetRepositories() ([]types.Repository, error) {
+	var repositories []types.Repository
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -80,11 +90,11 @@ func GetRepositories() ([]entity.Repository, error) {
 	cursor, err := database.RepositoryCollection.Find(ctx, bson.M{})
 
 	if err != nil {
-		return []entity.Repository{}, errors.New("Error retrieving repositories")
+		return []types.Repository{}, errors.New("error retrieving repositories")
 	}
 
 	if err = cursor.All(ctx, &repositories); err != nil {
-		return []entity.Repository{}, errors.New("Error retrieving repositories")
+		return []types.Repository{}, errors.New("error retrieving repositories")
 	}
 
 	return repositories, nil
