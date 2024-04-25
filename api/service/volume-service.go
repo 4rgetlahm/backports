@@ -44,8 +44,8 @@ func UpdateVolumeStatus(volumeName string, newStatus string) error {
 		"volume.name": volumeName,
 	}, bson.M{
 		"$set": bson.M{
-			"volume.status":      newStatus,
-			"volume.lastupdated": time.Now().UTC(),
+			"volume.status":       newStatus,
+			"volume.last_updated": time.Now().UTC(),
 		},
 	})
 

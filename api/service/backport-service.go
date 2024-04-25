@@ -103,13 +103,7 @@ func CreateBackport(author string, commits []string, repositoryOwner string, rep
 	return backport, nil
 }
 
-func AddBackportEvent(backportID primitive.ObjectID, action string, content string) error {
-	event := types.BackportEvent{
-		Action:      action,
-		Content:     content,
-		DateCreated: time.Now().Format(time.RFC3339),
-	}
-
+func AddBackportEvent(backportID primitive.ObjectID, event *types.BackportEvent) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 

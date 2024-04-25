@@ -8,11 +8,11 @@ import (
 
 type Backport struct {
 	ID               primitive.ObjectID `bson:"_id" json:"id"`
-	Author           string             `json:"author"`
-	Commits          []string           `json:"commits"`
-	Repository       Repository         `json:"repository"`
-	TargetBranchName string             `json:"target_branch_name"`
-	NewBranchName    string             `json:"new_branch_name"`
-	Events           []BackportEvent    `json:"events"`
-	DateCreated      time.Time          `json:"date_created"`
+	Author           string             `json:"author" bson:"author"`
+	Commits          []string           `json:"commits" bson:"commits"`
+	Repository       Repository         `json:"repository" bson:"repository"`
+	TargetBranchName string             `json:"target_branch_name" bson:"target_branch_name"`
+	NewBranchName    string             `json:"new_branch_name" bson:"new_branch_name"`
+	Events           []BackportEvent    `json:"events" bson:"events"`
+	DateCreated      time.Time          `json:"date_created" bson:"date_created"`
 }

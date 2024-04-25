@@ -9,11 +9,16 @@ import (
 	"github.com/4rgetlahm/backports/database"
 	"github.com/4rgetlahm/backports/manager/grpcService"
 	"github.com/4rgetlahm/backports/manager/launcher"
+	"github.com/4rgetlahm/backports/manager/tracker"
 	"github.com/4rgetlahm/backports/repositoryVolumeGenerator"
 	"google.golang.org/grpc"
 )
 
 func main() {
+
+	var pubsubProject = "backport-automation"
+	var pubsubTopic = "backport.runner.updates"
+	var pubsubCredentials = ""
 
 	args := os.Args[1:]
 	if len(args) == 0 {
@@ -22,7 +27,10 @@ func main() {
 
 	if args[0] == "docker" {
 		log.Default().Println("Using Docker Launcher")
-		launcher.GlobalLauncher = launcher.DockerLauncher{}
+		dockerLauncher := launcher.DockerLauncher{}
+		dockerLauncher.InitClient(pubsubProject, pubsubTopic, pubsubCredentials)
+		launcher.GlobalLauncher = dockerLauncher
+
 	} else {
 		log.Fatalf("Invalid launcher type")
 	}
@@ -33,6 +41,8 @@ func main() {
 	}
 
 	database.Init()
+
+	go tracker.StartStatusTracker(pubsubProject, pubsubTopic, pubsubCredentials)
 
 	grpcServer := grpc.NewServer()
 	backportRequest.RegisterBackportRequestServiceServer(grpcServer, &grpcService.BackportRequestServer{})

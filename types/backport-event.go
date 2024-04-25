@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 const (
 	ActionVirtualMachinePreparing = "VirtualMachinePreparing"
 	ActionVirtualMachineError     = "VirtualMachineError"
@@ -22,17 +24,19 @@ const (
 	ActionGitPullSuccess = "GitPullSuccess"
 	ActionGitPullFailure = "GitPullFailure"
 
+	ActionGitCherryPickStart   = "GitCherryPickStart"
+	ActionGitCherryPickSuccess = "GitCherryPickSuccess"
+	ActionGitCherryPickFailure = "GitCherryPickFailure"
+
 	ActionGitPushStart   = "GitPushStart"
 	ActionGitPushSuccess = "GitPushSuccess"
 	ActionGitPushFailure = "GitPushFailure"
 
-	ActionGitCherryPickStart   = "GitCherryPickStart"
-	ActionGitCherryPickSuccess = "GitCherryPickSuccess"
-	ActionGitCherryPickFailure = "GitCherryPickFailure"
+	ActionRunnerExited = "RunnerExited"
 )
 
 type BackportEvent struct {
-	Action      string `json:"action"`
-	Content     string `json:"content"`
-	DateCreated string `json:"date_created"`
+	Action      string                 `json:"action" bson:"action"`
+	Content     map[string]interface{} `json:"content" bson:"content"`
+	DateCreated time.Time              `json:"date_created" bson:"date_created"`
 }

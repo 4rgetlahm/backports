@@ -2,6 +2,7 @@ package launcher
 
 import (
 	"context"
+	"encoding/base64"
 	"log"
 	"strings"
 	"time"
@@ -18,20 +19,24 @@ import (
 type DockerLauncher struct{}
 
 var dockerClient *client.Client
+var reporterConfig string
 
-func (launcher DockerLauncher) InitClient() *client.Client {
+func (launcher DockerLauncher) InitClient(pubsubProject string, pubsubTopic string, pubsubCredentials string) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 
 	if err != nil {
 		panic(err)
 	}
 
-	return cli
+	var combinedCredentials string = "{" + "\"project\":" + "\"" + pubsubProject + "\"," + "\"topic\":" + "\"" + pubsubTopic + "\"," + "\"credentials\":" + "\"" + pubsubCredentials + "\"" + "}"
+	reporterConfig = base64.StdEncoding.EncodeToString([]byte(combinedCredentials))
+
+	dockerClient = cli
 }
 
-func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, cloneUrl string, credentials string, overwrite bool) (string, error) {
+func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, cloneUrl string, gitCredentials string, overwrite bool) (string, error) {
 	if dockerClient == nil {
-		dockerClient = launcher.InitClient()
+		panic("Docker client not initialized")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -60,7 +65,7 @@ func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, clon
 		Image: "4rgetlahm/repo-cloner:1.0",
 		Env: []string{
 			"CLONE_URL=" + cloneUrl,
-			"CREDENTIALS=" + credentials,
+			"CREDENTIALS=" + gitCredentials,
 		},
 	},
 		&container.HostConfig{
@@ -87,17 +92,17 @@ func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, clon
 		return "", err
 	}
 
-	go launcher.UpdateVolumeStateAndRemoveContainerPostContainerExit(resp.ID, volumeName)
+	go launcher.updateVolumeStateAndRemoveContainerPostContainerExit(resp.ID, volumeName)
 
 	return resp.ID, nil
 }
 
 func (launcher DockerLauncher) LaunchBackportJob(volume string, reference primitive.ObjectID, newBranchName string, targetBranchName string, commits []string) error {
 	if dockerClient == nil {
-		dockerClient = launcher.InitClient()
+		panic("Docker client not initialized")
 	}
 
-	service.AddBackportEvent(reference, types.ActionVirtualMachinePreparing, "")
+	addBackportEvent(reference, types.ActionVirtualMachinePreparing, nil)
 
 	go launcher.launchBackportJob(volume, reference, newBranchName, targetBranchName, commits)
 
@@ -109,10 +114,12 @@ func (launcher DockerLauncher) launchBackportJob(volume string, reference primit
 	defer cancel()
 
 	newVolumeName := "backport-automation-volume-" + reference.Hex()
-	_, err := launcher.DuplicateVolume(volume, newVolumeName)
+	_, err := launcher.duplicateVolume(volume, newVolumeName)
 
 	if err != nil {
-		service.AddBackportEvent(reference, types.ActionVirtualMachineError, err.Error())
+		addBackportEvent(reference, types.ActionVirtualMachineError, map[string]interface{}{
+			"error": err.Error(),
+		})
 		return err
 	}
 
@@ -124,7 +131,7 @@ func (launcher DockerLauncher) launchBackportJob(volume string, reference primit
 			"TARGET_BRANCH_NAME=" + targetBranchName,
 			"COMMITS=" + strings.Join(commits, ","),
 			"SOURCE_PATH=/repo",
-			"REPORTER_CONFIG=" + "",
+			"REPORTER_CONFIG=" + reporterConfig,
 		},
 	},
 		&container.HostConfig{
@@ -142,26 +149,32 @@ func (launcher DockerLauncher) launchBackportJob(volume string, reference primit
 		}, nil, nil, "backport-job-"+reference.Hex())
 
 	if err != nil {
-		service.AddBackportEvent(reference, types.ActionVirtualMachineError, err.Error())
+		addBackportEvent(reference, types.ActionVirtualMachineError, map[string]interface{}{
+			"error": err.Error(),
+		})
 		return err
 	}
 
 	err = dockerClient.ContainerStart(ctx, resp.ID, container.StartOptions{})
 
 	if err != nil {
-		service.AddBackportEvent(reference, types.ActionVirtualMachineError, err.Error())
+		addBackportEvent(reference, types.ActionVirtualMachineError, map[string]interface{}{
+			"error": err.Error(),
+		})
 		return err
 	}
 
-	go launcher.RemoveContainerAndVolumePostContainerExit(resp.ID, newVolumeName)
-	service.AddBackportEvent(reference, types.ActionVirtualMachineCreated, resp.ID)
+	go launcher.removeContainerAndVolumePostContainerExit(resp.ID, newVolumeName, reference)
+	addBackportEvent(reference, types.ActionVirtualMachineCreated, map[string]interface{}{
+		"container_id": resp.ID,
+	})
 
 	return nil
 }
 
-func (Launcher DockerLauncher) DuplicateVolume(volumeName string, newVolumeName string) (string, error) {
+func (Launcher DockerLauncher) duplicateVolume(volumeName string, newVolumeName string) (string, error) {
 	if dockerClient == nil {
-		dockerClient = Launcher.InitClient()
+		panic("Docker client not initialized")
 	}
 
 	log.Printf("Duplicating volume %s to %s", volumeName, newVolumeName)
@@ -237,7 +250,7 @@ func (Launcher DockerLauncher) DuplicateVolume(volumeName string, newVolumeName 
 	return resp.ID, nil
 }
 
-func (launcher DockerLauncher) UpdateVolumeStateAndRemoveContainerPostContainerExit(containerID string, volumeName string) {
+func (launcher DockerLauncher) updateVolumeStateAndRemoveContainerPostContainerExit(containerID string, volumeName string) {
 	log.Println("Awaiting container to finish: " + containerID)
 	exitCh, err := dockerClient.ContainerWait(context.Background(), containerID, container.WaitConditionNotRunning)
 
@@ -264,7 +277,7 @@ func (launcher DockerLauncher) UpdateVolumeStateAndRemoveContainerPostContainerE
 	}
 }
 
-func (launcher DockerLauncher) RemoveContainerAndVolumePostContainerExit(containerID string, volumeName string) {
+func (launcher DockerLauncher) removeContainerAndVolumePostContainerExit(containerID string, volumeName string, reference primitive.ObjectID) {
 	log.Println("Awaiting container to finish: " + containerID)
 	exitCh, err := dockerClient.ContainerWait(context.Background(), containerID, container.WaitConditionNotRunning)
 
@@ -278,6 +291,10 @@ func (launcher DockerLauncher) RemoveContainerAndVolumePostContainerExit(contain
 
 		dockerClient.ContainerRemove(ctx, containerID, container.RemoveOptions{
 			Force: true,
+		})
+
+		addBackportEvent(reference, types.ActionVirtualMachineExited, map[string]interface{}{
+			"container_id": containerID,
 		})
 
 		log.Println("Removing volume: " + volumeName)
@@ -294,4 +311,14 @@ func (launcher DockerLauncher) RemoveContainerAndVolumePostContainerExit(contain
 	if err != nil {
 		return
 	}
+}
+
+func addBackportEvent(reference primitive.ObjectID, action string, content map[string]interface{}) {
+	event := types.BackportEvent{
+		Action:      action,
+		Content:     content,
+		DateCreated: time.Now(),
+	}
+
+	service.AddBackportEvent(reference, &event)
 }

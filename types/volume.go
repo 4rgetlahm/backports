@@ -3,9 +3,9 @@ package types
 import "time"
 
 type Volume struct {
-	Name        string    `json:"name"`
-	Status      string    `json:"status"`
-	LastUpdated time.Time `json:"last_updated"`
+	Name        string    `json:"name" bson:"name"`
+	Status      string    `json:"status" bson:"status"`
+	LastUpdated time.Time `json:"last_updated" bson:"last_updated"`
 }
 
 const (
