@@ -1,18 +1,17 @@
 syntax = "proto3";
 option go_package = "github.com/4rgetlahm/backports/backportRequest";
 
+import "google/protobuf/empty.proto";
+
 message BackportRequest {
     string reference = 1;
-    string image = 2;
-    string new_branch_name = 3;
-    string target_branch_name = 4;
-    repeated string commits = 5;
-}
-
-message BackportResponse {
-    string jobName = 1;
+    string volume = 2;
+    string vcs = 3;
+    string new_branch_name = 4;
+    string target_branch_name = 5;
+    repeated string commits = 6;
 }
 
 service BackportRequestService {
-    rpc RunBackport(BackportRequest) returns (BackportResponse);
+    rpc RunBackport(BackportRequest) returns (google.protobuf.Empty);
 }

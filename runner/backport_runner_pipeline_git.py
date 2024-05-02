@@ -2,7 +2,7 @@ import git
 from messages import RunnerStatusMessage
 
 
-class BackportRunnerPipeline:
+class GitBackportRunnerPipeline:
     def __init__(self, source_path, target_branch_name, new_branch_name, commits, reporter) -> None:
         self.target_branch_name = target_branch_name
         self.new_branch_name = new_branch_name

@@ -2,13 +2,17 @@ package main
 
 import (
 	"github.com/4rgetlahm/backports/api/controller"
-	"github.com/4rgetlahm/backports/api/database"
+	"github.com/4rgetlahm/backports/api/localGRPC"
 	"github.com/4rgetlahm/backports/api/middleware"
+	"github.com/4rgetlahm/backports/database"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	database.Init()
+
+	conn := localGRPC.Init()
+	defer conn.Close()
 
 	server := gin.Default()
 

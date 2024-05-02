@@ -61,11 +61,11 @@ func GetBackport(c *gin.Context) {
 
 func CreateBackport(c *gin.Context) {
 	type CreateBackportRequest struct {
-		Author          string   `json:"author"`
-		Commits         []string `json:"commits"`
-		RepositoryOwner string   `json:"repositoryOwner"`
-		RepositoryName  string   `json:"repositoryName"`
-		TargetBranch    string   `json:"targetBranch"`
+		Author           string   `json:"author"`
+		Commits          []string `json:"commits"`
+		RepositoryName   string   `json:"repositoryName"`
+		NewBranchName    string   `json:"newBranchName"`
+		TargetBranchName string   `json:"targetBranchName"`
 	}
 
 	var request CreateBackportRequest
@@ -76,7 +76,7 @@ func CreateBackport(c *gin.Context) {
 		return
 	}
 
-	backport, err := service.CreateBackport(request.Author, request.Commits, request.RepositoryOwner, request.RepositoryName, request.TargetBranch)
+	backport, err := service.CreateBackport(request.Author, request.Commits, request.RepositoryName, request.TargetBranchName, request.NewBranchName)
 
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})

@@ -1,25 +1,19 @@
-package entity
+package types
 
-import (
-	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
-type Backport struct {
-	ID           primitive.ObjectID `bson:"_id" json:"id"`
-	Author       string             `json:"author"`
-	Commits      []string           `json:"commits"`
-	Repository   Repository         `json:"repository"`
-	TargetBranch string             `json:"targetBranch"`
-	Events       []BackportEvent    `json:"events"`
-	DateCreated  time.Time          `json:"dateCreated"`
-	DateUpdated  time.Time          `json:"dateUpdated"`
-}
+import "time"
 
 const (
+	ActionVirtualMachinePreparing = "VirtualMachinePreparing"
+
+	ActionVolumeCreateStart   = "VolumeCreateStart"
+	ActionVolumeCreateSuccess = "VolumeCreated"
+	ActionVolumeCreateFailure = "VolumeCreateFailure"
+
+	ActionVirtualMachineError   = "VirtualMachineError"
 	ActionVirtualMachineCreated = "VirtualMachineCreated"
 	ActionVirtualMachineExited  = "VirtualMachineExited"
+
+	ActionRunnerStarted = "RunnerStarted"
 
 	ActionGitFetchStart   = "GitFetchStart"
 	ActionGitFetchSuccess = "GitFetchSuccess"
@@ -37,17 +31,19 @@ const (
 	ActionGitPullSuccess = "GitPullSuccess"
 	ActionGitPullFailure = "GitPullFailure"
 
+	ActionGitCherryPickStart   = "GitCherryPickStart"
+	ActionGitCherryPickSuccess = "GitCherryPickSuccess"
+	ActionGitCherryPickFailure = "GitCherryPickFailure"
+
 	ActionGitPushStart   = "GitPushStart"
 	ActionGitPushSuccess = "GitPushSuccess"
 	ActionGitPushFailure = "GitPushFailure"
 
-	ActionGitCherryPickStart   = "GitCherryPickStart"
-	ActionGitCherryPickSuccess = "GitCherryPickSuccess"
-	ActionGitCherryPickFailure = "GitCherryPickFailure"
+	ActionRunnerExited = "RunnerExited"
 )
 
 type BackportEvent struct {
-	Action      string `json:"action"`
-	Content     string `json:"content"`
-	DateCreated string `json:"dateCreated"`
+	Action      string                 `json:"action" bson:"action"`
+	Content     map[string]interface{} `json:"content" bson:"content"`
+	DateCreated time.Time              `json:"date_created" bson:"date_created"`
 }
