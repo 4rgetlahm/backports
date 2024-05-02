@@ -7,7 +7,6 @@ import (
 
 func InitRepositoryController(router *gin.Engine) {
 	router.GET("/v1/repositories", GetRepositories)
-	router.GET("/v1/repository/:owner/:name", GetRepository)
 	router.POST("/v1/repository", CreateRepository)
 }
 
@@ -23,10 +22,9 @@ func GetRepositories(c *gin.Context) {
 }
 
 func GetRepository(c *gin.Context) {
-	owner := c.Param("owner")
 	name := c.Param("name")
 
-	repository, err := service.GetRepository(owner, name)
+	repository, err := service.GetRepository(name)
 
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
@@ -38,8 +36,9 @@ func GetRepository(c *gin.Context) {
 
 func CreateRepository(c *gin.Context) {
 	type CreateRepositoryRequest struct {
-		CloneURL string `json:"clone_url"`
-		Image    string `json:"image"`
+		VersionControlSystem string `json:"version_control_system"`
+		CloneURL             string `json:"clone_url"`
+		Name                 string `json:"name"`
 	}
 
 	var request CreateRepositoryRequest
@@ -50,7 +49,7 @@ func CreateRepository(c *gin.Context) {
 		return
 	}
 
-	repository, err := service.CreateRepository(request.CloneURL)
+	repository, err := service.CreateRepository(request.VersionControlSystem, request.CloneURL, request.Name)
 
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})

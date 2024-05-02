@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"regexp"
 	"time"
 
 	"github.com/4rgetlahm/backports/api/localGRPC"
@@ -15,13 +14,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetRepository(owner string, name string) (types.Repository, error) {
+func GetRepository(name string) (types.Repository, error) {
 	var repo types.Repository
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
-	err := database.RepositoryCollection.FindOne(ctx, bson.M{"owner": owner, "name": name}).Decode(&repo)
+	err := database.RepositoryCollection.FindOne(ctx, bson.M{"name": name}).Decode(&repo)
 
 	if err != nil {
 		return types.Repository{}, errors.New("error retrieving repository")
@@ -30,33 +29,25 @@ func GetRepository(owner string, name string) (types.Repository, error) {
 	return repo, nil
 }
 
-func CreateRepository(clone_url string) (types.Repository, error) {
+func CreateRepository(vcs string, cloneURL string, name string) (types.Repository, error) {
 
-	regex := regexp.MustCompile(`(?P<Server>..+)\/(?P<Owner>..+)\/(?P<Name>..+).git`)
-	match := regex.FindStringSubmatch(clone_url)
-
-	if len(match) != 4 {
-		return types.Repository{}, errors.New("invalid clone URL")
+	if vcs != types.VersionControlSystemGit && vcs != types.VersionControlSystemMercurial {
+		return types.Repository{}, errors.New("invalid version control system")
 	}
 
-	server := match[1]
-	owner := match[2]
-	name := match[3]
-
-	existingRepository, err := GetRepository(owner, name)
+	existingRepository, err := GetRepository(name)
 
 	if err == nil {
 		return existingRepository, errors.New("repository already exists")
 	}
 
-	var volumeName string = owner + "." + name
+	var volumeName string = name + ".repo"
 
 	repo := types.Repository{
-		ID:       primitive.NewObjectID(),
-		Server:   server,
-		Owner:    owner,
-		Name:     name,
-		CloneURL: clone_url,
+		ID:                   primitive.NewObjectID(),
+		VersionControlSystem: vcs,
+		Name:                 name,
+		CloneURL:             cloneURL,
 		Volume: types.Volume{
 			Name:        volumeName,
 			Status:      types.VolumeStatusNotInitialized,
@@ -79,10 +70,10 @@ func CreateRepository(clone_url string) (types.Repository, error) {
 	var trueBool = true
 
 	localGRPC.VolumeGenerationClient.Generate(context.Background(), &repositoryVolumeGenerator.GenerateRepositoryVolumeRequest{
-		VolumeName:  volumeName,
-		CloneUrl:    repo.CloneURL,
-		Credentials: "",
-		Overwrite:   &trueBool,
+		VolumeName: volumeName,
+		Vcs:        vcs,
+		CloneUrl:   repo.CloneURL,
+		Overwrite:  &trueBool,
 	})
 
 	return repo, nil

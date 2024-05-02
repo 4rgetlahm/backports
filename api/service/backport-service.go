@@ -63,8 +63,8 @@ func GetBackport(id primitive.ObjectID) (types.Backport, error) {
 	return backport, nil
 }
 
-func CreateBackport(author string, commits []string, repositoryOwner string, repositoryName, targetBranchName string, newBranchName string) (types.Backport, error) {
-	repository, err := GetRepository(repositoryOwner, repositoryName)
+func CreateBackport(author string, commits []string, repositoryName, targetBranchName string, newBranchName string) (types.Backport, error) {
+	repository, err := GetRepository(repositoryName)
 	if err != nil {
 		return types.Backport{}, errors.New("error retrieving repository")
 	}
@@ -77,7 +77,7 @@ func CreateBackport(author string, commits []string, repositoryOwner string, rep
 		TargetBranchName: targetBranchName,
 		NewBranchName:    newBranchName,
 		Events:           []types.BackportEvent{},
-		DateCreated:      time.Now(),
+		DateCreated:      time.Now().UTC(),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -94,7 +94,7 @@ func CreateBackport(author string, commits []string, repositoryOwner string, rep
 
 	localGRPC.BackportRequestClient.RunBackport(context.Background(), &backportRequest.BackportRequest{
 		Reference:        backport.ID.Hex(),
-		Volume:           repository.Owner + "." + repository.Name,
+		Volume:           repository.Volume.Name,
 		NewBranchName:    newBranchName,
 		TargetBranchName: targetBranchName,
 		Commits:          backport.Commits,

@@ -34,7 +34,7 @@ func (launcher DockerLauncher) InitClient(pubsubProject string, pubsubTopic stri
 	dockerClient = cli
 }
 
-func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, cloneUrl string, gitCredentials string, overwrite bool) (string, error) {
+func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, vcs string, cloneUrl string, overwrite bool) (string, error) {
 	if dockerClient == nil {
 		panic("Docker client not initialized")
 	}
@@ -64,8 +64,8 @@ func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, clon
 	resp, err := dockerClient.ContainerCreate(ctx, &container.Config{
 		Image: "4rgetlahm/repo-cloner:1.0",
 		Env: []string{
+			"VCS=" + vcs,
 			"CLONE_URL=" + cloneUrl,
-			"CREDENTIALS=" + gitCredentials,
 		},
 	},
 		&container.HostConfig{
@@ -97,35 +97,49 @@ func (launcher DockerLauncher) LaunchVolumeGenerationJob(volumeName string, clon
 	return resp.ID, nil
 }
 
-func (launcher DockerLauncher) LaunchBackportJob(volume string, reference primitive.ObjectID, newBranchName string, targetBranchName string, commits []string) error {
+func (launcher DockerLauncher) LaunchBackportJob(volume string, vcs string, reference primitive.ObjectID, newBranchName string, targetBranchName string, commits []string) error {
 	if dockerClient == nil {
 		panic("Docker client not initialized")
 	}
 
+	_, err := dockerClient.VolumeInspect(context.Background(), volume)
+
+	if err != nil {
+		return err
+	}
+
 	addBackportEvent(reference, types.ActionVirtualMachinePreparing, nil)
 
-	go launcher.launchBackportJob(volume, reference, newBranchName, targetBranchName, commits)
+	go launcher.launchBackportJob(volume, vcs, reference, newBranchName, targetBranchName, commits)
 
 	return nil
 }
 
-func (launcher DockerLauncher) launchBackportJob(volume string, reference primitive.ObjectID, newBranchName string, targetBranchName string, commits []string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
+func (launcher DockerLauncher) launchBackportJob(volume string, vcs string, reference primitive.ObjectID, newBranchName string, targetBranchName string, commits []string) error {
 	newVolumeName := "backport-automation-volume-" + reference.Hex()
+
+	addBackportEvent(reference, types.ActionVolumeCreateStart, map[string]interface{}{
+		"volume_name": newVolumeName,
+	})
+
 	_, err := launcher.duplicateVolume(volume, newVolumeName)
 
 	if err != nil {
-		addBackportEvent(reference, types.ActionVirtualMachineError, map[string]interface{}{
+		addBackportEvent(reference, types.ActionVolumeCreateFailure, map[string]interface{}{
 			"error": err.Error(),
 		})
 		return err
 	}
 
+	addBackportEvent(reference, types.ActionVolumeCreateSuccess, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	resp, err := dockerClient.ContainerCreate(ctx, &container.Config{
 		Image: "4rgetlahm/backport-runner:1.0",
 		Env: []string{
+			"VCS=" + vcs,
 			"REFERENCE=" + reference.Hex(),
 			"NEW_BRANCH_NAME=" + newBranchName,
 			"TARGET_BRANCH_NAME=" + targetBranchName,

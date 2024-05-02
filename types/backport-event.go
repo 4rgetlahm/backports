@@ -4,9 +4,16 @@ import "time"
 
 const (
 	ActionVirtualMachinePreparing = "VirtualMachinePreparing"
-	ActionVirtualMachineError     = "VirtualMachineError"
-	ActionVirtualMachineCreated   = "VirtualMachineCreated"
-	ActionVirtualMachineExited    = "VirtualMachineExited"
+
+	ActionVolumeCreateStart   = "VolumeCreateStart"
+	ActionVolumeCreateSuccess = "VolumeCreated"
+	ActionVolumeCreateFailure = "VolumeCreateFailure"
+
+	ActionVirtualMachineError   = "VirtualMachineError"
+	ActionVirtualMachineCreated = "VirtualMachineCreated"
+	ActionVirtualMachineExited  = "VirtualMachineExited"
+
+	ActionRunnerStarted = "RunnerStarted"
 
 	ActionGitFetchStart   = "GitFetchStart"
 	ActionGitFetchSuccess = "GitFetchSuccess"

@@ -1,14 +1,16 @@
 import os
-from git import Repo
+import subprocess
 
-credentials = os.environ.get('CREDENTIALS')
+vcs = os.environ.get('VCS')
 clone_url = os.environ.get('CLONE_URL')
-
-if credentials is None:
-    raise ValueError('CREDENTIALS environment variable is not set')
 
 if clone_url is None:
     raise ValueError('CLONE URL environment variable is not set')
 
-clone_url = clone_url.replace('https://', f'https://{credentials}@')
-Repo.clone_from(clone_url, '/repo')
+if vcs == 'git':
+    subprocess.run(['git', 'clone', clone_url, '/repo'])
+
+if vcs == 'hg':
+    subprocess.run(['hg', 'clone', clone_url, '/repo'])
+
+print('Repo cloned successfully')

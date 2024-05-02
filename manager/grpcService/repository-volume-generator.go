@@ -18,10 +18,6 @@ func (s *RepositoryVolumeGeneratorServer) Generate(ctx context.Context, req *rep
 		return &repositoryVolumeGenerator.GenerateVolumeResponse{}, status.Error(400, "Clone URL is required")
 	}
 
-	if req.Credentials == "" {
-		return &repositoryVolumeGenerator.GenerateVolumeResponse{}, status.Error(400, "Credentials are required")
-	}
-
 	if req.VolumeName == "" {
 		return &repositoryVolumeGenerator.GenerateVolumeResponse{}, status.Error(400, "Volume name is required")
 	}
@@ -33,7 +29,7 @@ func (s *RepositoryVolumeGeneratorServer) Generate(ctx context.Context, req *rep
 		overwrite = *req.Overwrite
 	}
 
-	id, err := launcher.GlobalLauncher.LaunchVolumeGenerationJob(req.VolumeName, req.CloneUrl, req.Credentials, overwrite)
+	id, err := launcher.GlobalLauncher.LaunchVolumeGenerationJob(req.VolumeName, req.Vcs, req.CloneUrl, overwrite)
 
 	if err != nil {
 		log.Printf("Failed to launch volume generation job: %v", err)

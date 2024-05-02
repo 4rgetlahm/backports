@@ -86,6 +86,8 @@ func (statusMessage *runnerStatusMessage) toBackportEvent() (*types.BackportEven
 	var eventType string
 	if statusMessage.Status == "success" {
 		switch statusMessage.Stage {
+		case "start":
+			eventType = types.ActionRunnerStarted
 		case "fetch":
 			eventType = types.ActionGitFetchSuccess
 		case "checkout":

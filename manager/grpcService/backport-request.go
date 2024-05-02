@@ -6,6 +6,7 @@ import (
 
 	"github.com/4rgetlahm/backports/backportRequest"
 	"github.com/4rgetlahm/backports/manager/launcher"
+	"github.com/4rgetlahm/backports/types"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,6 +21,11 @@ func (s *BackportRequestServer) RunBackport(ctx context.Context, req *backportRe
 	if req.NewBranchName == "" || req.TargetBranchName == "" {
 		return nil, status.Error(codes.InvalidArgument, "Base branch and target branch are required")
 	}
+
+	if req.Vcs != types.VersionControlSystemGit && req.Vcs != types.VersionControlSystemMercurial {
+		return nil, status.Error(codes.InvalidArgument, "Invalid VCS")
+	}
+
 	if req.Commits == nil || len(req.Commits) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Commits are required")
 	}
@@ -36,7 +42,7 @@ func (s *BackportRequestServer) RunBackport(ctx context.Context, req *backportRe
 		return nil, status.Error(codes.InvalidArgument, "Invalid ObjectID")
 	}
 
-	err = launcher.GlobalLauncher.LaunchBackportJob(req.Volume, objId, req.NewBranchName, req.TargetBranchName, req.Commits)
+	err = launcher.GlobalLauncher.LaunchBackportJob(req.Volume, req.Vcs, objId, req.NewBranchName, req.TargetBranchName, req.Commits)
 
 	if err != nil {
 		log.Printf("Failed to launch backport job: %v", err)
